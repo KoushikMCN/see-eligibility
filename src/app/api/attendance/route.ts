@@ -8,7 +8,7 @@ export async function GET(req:NextRequest) {
     if (sidQuery) {
         student_id = sidQuery[0].id
     }
-    const aQuery = await supabase.from('Enrollments').select('id, Attendance(attendance_count, max_attendance)').eq('student_id', student_id)
+    const aQuery = await supabase.from('Enrollments').select('id, Attendance(*), Course(*)').eq('student_id', student_id)
     const aData = aQuery.data
 
     if (aData) {

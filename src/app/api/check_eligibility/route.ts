@@ -13,10 +13,6 @@ export async function GET(req: NextRequest) {
     .select("id, Fee(paid_fee, outstanding_fee)")
     .eq("id", student_id);
 
-  // if (fQuery.data) {
-  //     console.log(fQuery.data[0].Fee)
-  // }
-
   const check_fee_paid = () => {
     let all_fees_paid = true;
     if (fQuery.data) {
@@ -34,32 +30,26 @@ export async function GET(req: NextRequest) {
 
   const fee_paid = check_fee_paid();
 
-  // console.log(fee_paid)
+  // if (!fee_paid) {
+  //   return NextResponse.json({
+  //     message: "OK",
+  //     see_eligibility: fee_paid,
+  //     reason: `Fee not paid`,
+  //   });
+  // }
 
-  if (!fee_paid) {
-    return NextResponse.json({
-      message: "OK",
-      see_eligibility: fee_paid,
-      reason: `Fee not paid`,
-    });
-  }
-
-  const acQuery = await supabase
+  const aQuery = await supabase
     .from("Enrollments")
     .select(
-      "id, Attendance(attendance_count, max_attendance), CIE_Marks(max_marks, obt_marks)"
+      "id, Attendance(attendance_count, max_attendance)"
     )
     .eq("student_id", student_id);
-  const acData = acQuery.data;
+  const aData = aQuery.data;
 
-  const check_attendance_and_cie = () => {
+  const check_attendance = () => {
     let check = true;
-    acData?.map((ac) => {
-      let attendance = ac.Attendance;
-      let cie_marks = ac["CIE_Marks"];
-      if (cie_marks && !(cie_marks.obt_marks / cie_marks.max_marks > 0.4)) {
-        check = false;
-      }
+    aData?.map((a) => {
+      let attendance = a.Attendance;
       if (
         attendance &&
         !(attendance["attendance_count"] / attendance["max_attendance"] > 0.75)
@@ -70,16 +60,36 @@ export async function GET(req: NextRequest) {
     return check;
   };
 
-  const acCheck = check_attendance_and_cie();
+  const aCheck = check_attendance();
 
-  //   console.log(acData);
+  const cQuery = await supabase
+    .from("Enrollments")
+    .select(
+      "id, CIE_Marks(max_marks, obt_marks)"
+    )
+    .eq("student_id", student_id);
+  const cData = cQuery.data;
+
+  const check_cie = () => {
+    let check = true;
+    cData?.map((c) => {
+      let cie_marks = c["CIE_Marks"];
+      if (cie_marks && !(cie_marks.obt_marks / cie_marks.max_marks > 0.4)) {
+        check = false;
+      }
+    });
+    return check;
+  };
+
+  const cCheck = check_cie();
 
   return NextResponse.json({
     message: "OK",
-    see_eligibility: fee_paid && acCheck,
-    reason: {
-      stmt: `Attendance and CIE marks ${acCheck ? "satisfactory" : "not satisfactory"}`,
-      status: acCheck,
-    },
+    see_eligibility: fee_paid && aCheck && cCheck,
+    reason: [
+    `Attendance ${aCheck ? "satisfactory" : "not satisfactory"}`,
+    `CIE Marks ${cCheck ? "satisfactory" : "not satisfactory"}`,
+    `Fee ${fee_paid ? "paid" : "not paid"}`
+  ]
   });
 }

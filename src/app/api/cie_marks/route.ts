@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const aQuery = await supabase
     .from("Enrollments")
-    .select("id, CIE_Marks(max_marks, obt_marks)")
+    .select("id, CIE_Marks(max_marks, obt_marks), Course(course_name)")
     .eq("student_id", student_id);
 
   const aData = aQuery.data;

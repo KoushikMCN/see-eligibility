@@ -11,6 +11,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.44.2",
     "js-cookie": "^3.0.5",
+    "loading-spinner-react": "^0.0.7",
     "next": "14.2.4",
     "react": "^18",
     "react-dom": "^18"
